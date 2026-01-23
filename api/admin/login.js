@@ -1,6 +1,6 @@
-import { kv } from '@vercel/kv';
+const { kv } = require('@vercel/kv');
 
-export default async (req, res) => {
+module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -21,5 +21,8 @@ export default async (req, res) => {
     } else {
       res.status(401).json({ success: false, message: 'Invalid password' });
     }
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Server error' });
   }
 };
