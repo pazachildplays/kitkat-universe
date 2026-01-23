@@ -1,0 +1,11 @@
+{
+  "title": "Welcome to KitKat Universe",
+  "bgGradient": "linear-gradient(135deg, #5b7cfa 0%, #d946ef 100%)",
+  "primaryColor": "#bcadd7",
+  "secondaryColor": "#3b2e3d",
+  "footerColor": "#1a1a1a",
+  "textColor": "#ffffff",
+  "commissionsStatus": "Open",
+  "links": [],
+  "contacts": []
+}
