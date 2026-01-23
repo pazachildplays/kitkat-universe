@@ -3,6 +3,5 @@ node_modules/
 *.log
 .env
 .env.local
-.netlify
 dist/
 build/
