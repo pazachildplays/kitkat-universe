@@ -65,7 +65,12 @@ function saveConfig(data) {
 }
 
 exports.handler = async (event, context) => {
-  const { path, httpMethod, body } = event;
+  // Netlify passes the path in event.path
+  const rawPath = event.path || event.url || '';
+  // Remove the function prefix to get the actual API path
+  const path = rawPath.replace('/.netlify/functions/api', '') || '/';
+  const httpMethod = event.httpMethod;
+  const body = event.body;
   
   const headers = {
     'Access-Control-Allow-Origin': '*',
@@ -73,6 +78,8 @@ exports.handler = async (event, context) => {
     'Access-Control-Allow-Headers': 'Content-Type',
     'Content-Type': 'application/json'
   };
+
+  console.log(`[API] ${httpMethod} ${path}`);
 
   if (httpMethod === 'OPTIONS') {
     return {
@@ -84,7 +91,7 @@ exports.handler = async (event, context) => {
 
   try {
     // Get config
-    if (path === '/api/config' && httpMethod === 'GET') {
+    if (path.includes('/config') && httpMethod === 'GET') {
       const config = getConfig();
       return {
         statusCode: 200,
@@ -94,7 +101,7 @@ exports.handler = async (event, context) => {
     }
 
     // Admin login
-    if (path === '/api/admin/login' && httpMethod === 'POST') {
+    if (path.includes('/admin/login') && httpMethod === 'POST') {
       let data = {};
       try {
         data = JSON.parse(body || '{}');
@@ -122,7 +129,7 @@ exports.handler = async (event, context) => {
     }
 
     // Update config
-    if (path === '/api/admin/update' && httpMethod === 'POST') {
+    if (path.includes('/admin/update') && httpMethod === 'POST') {
       let data = {};
       try {
         data = JSON.parse(body || '{}');
@@ -161,7 +168,7 @@ exports.handler = async (event, context) => {
     }
 
     // Update links
-    if (path === '/api/admin/links' && httpMethod === 'POST') {
+    if (path.includes('/admin/links') && httpMethod === 'POST') {
       let data = {};
       try {
         data = JSON.parse(body || '{}');
@@ -199,10 +206,11 @@ exports.handler = async (event, context) => {
       }
     }
 
+    console.log(`[API 404] ${httpMethod} ${path}`);
     return {
       statusCode: 404,
       headers,
-      body: JSON.stringify({ success: false, message: 'Not found' })
+      body: JSON.stringify({ success: false, message: `Not found: ${path}` })
     };
 
   } catch (error) {
