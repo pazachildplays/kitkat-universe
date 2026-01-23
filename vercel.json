@@ -12,8 +12,20 @@
   ],
   "routes": [
     {
-      "src": "/api/(.*)",
-      "dest": "/api/$1.js"
+      "src": "/api/config",
+      "dest": "/api/config.js"
+    },
+    {
+      "src": "/api/admin/login",
+      "dest": "/api/admin/login.js"
+    },
+    {
+      "src": "/api/admin/update",
+      "dest": "/api/admin/update.js"
+    },
+    {
+      "src": "/api/admin/links",
+      "dest": "/api/admin/links.js"
     },
     {
       "src": "/(.*)",
