@@ -36,8 +36,15 @@ async function loadConfig() {
                 linkBox.href = link.url;
                 linkBox.target = '_blank';
                 linkBox.className = 'link-box';
+                
+                // Check if icon is an image (base64) or emoji
+                const isImage = link.icon && link.icon.startsWith('data:image');
+                const iconHTML = isImage 
+                    ? `<img src="${link.icon}" alt="icon" class="icon-img">` 
+                    : `<span class="icon">${link.icon || '🔗'}</span>`;
+                
                 linkBox.innerHTML = `
-                    <span class="icon">${link.icon || '🔗'}</span>
+                    ${iconHTML}
                     <span class="name">${link.name}</span>
                 `;
                 linksContainer.appendChild(linkBox);

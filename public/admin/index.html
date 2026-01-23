@@ -88,7 +88,13 @@
                     <h4>Add New Link</h4>
                     <input type="text" id="linkName" placeholder="Link Name (e.g., youtube)" class="form-input">
                     <input type="text" id="linkUrl" placeholder="URL (e.g., https://...)" class="form-input">
-                    <input type="text" id="linkIcon" placeholder="Icon (emoji or text)" class="form-input" value="🔗">
+                    <div class="icon-upload-section">
+                        <label>Upload Icon Image:</label>
+                        <input type="file" id="linkIconFile" accept="image/*" class="form-input">
+                        <small>Or use emoji below:</small>
+                        <input type="text" id="linkIcon" placeholder="Icon (emoji or text)" class="form-input" value="🔗">
+                        <div id="iconPreview" class="icon-preview"></div>
+                    </div>
                     <div class="form-buttons">
                         <button onclick="saveNewLink()" class="btn-primary">Save Link</button>
                         <button onclick="cancelAddLink()" class="btn-secondary">Cancel</button>
