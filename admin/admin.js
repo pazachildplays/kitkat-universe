@@ -150,8 +150,8 @@ function displayLinks() {
                     </div>
                 </div>
                 <div class="link-actions">
-                    <button class="btn-primary" onclick="showEditLinkForm(${link.id})" style="background:#4CAF50;">✏️ Edit</button>
-                    <button class="btn-danger" onclick="deleteLink(${link.id})">🗑️ Delete</button>
+                    <button class="btn-primary btn-edit" onclick="showEditLinkForm(${link.id})">Edit</button>
+                    <button class="btn-danger" onclick="deleteLink(${link.id})">Delete</button>
                 </div>
             `;
             linksList.appendChild(linkItem);
@@ -392,8 +392,8 @@ function displayContacts() {
                     <div class="contact-value">${contact.value}</div>
                 </div>
                 <div class="contact-actions">
-                    <button class="btn-primary" onclick="showEditContactForm(${contact.id})" style="background:#4CAF50;">✏️ Edit</button>
-                    <button class="btn-danger" onclick="deleteContact(${contact.id})">🗑️ Delete</button>
+                    <button class="btn-primary btn-edit" onclick="showEditContactForm(${contact.id})">Edit</button>
+                    <button class="btn-danger" onclick="deleteContact(${contact.id})">Delete</button>
                 </div>
             `;
             contactsList.appendChild(contactItem);

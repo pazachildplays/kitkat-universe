@@ -8,7 +8,13 @@ const DEFAULT_CONFIG = {
   footerColor: '#1a1a1a',
   textColor: '#ffffff',
   commissionsStatus: 'Open',
-  links: [],
+  links: [
+    { id: 1, name: 'Twitter', url: 'https://x.com/KitkatUvU', icon: '𝕏' },
+    { id: 2, name: 'Twitch', url: 'https://www.twitch.tv/kitkaturvu', icon: '📺' },
+    { id: 3, name: 'Tiktok', url: 'https://www.tiktok.com/@kitkat.uvu', icon: '🎵' },
+    { id: 4, name: 'Youtube', url: 'https://www.youtube.com/@KitKatUvU', icon: '▶️' },
+    { id: 5, name: 'VGen', url: 'https://vgen.co/kitkaturvu', icon: '🎨' }
+  ],
   contacts: [
     { id: 1, type: 'email', label: 'Email', value: 'contact@kitkat.com', icon: '📧' },
     { id: 2, type: 'phone', label: 'Phone', value: '+1 (555) 123-4567', icon: '📱' }
@@ -18,7 +24,19 @@ const DEFAULT_CONFIG = {
 async function getConfig() {
   try {
     const config = await kv.get('kitkat:config');
-    return config || DEFAULT_CONFIG;
+    if (!config) {
+      return DEFAULT_CONFIG;
+    }
+    // Merge with defaults to ensure all required fields exist
+    const merged = {
+      ...DEFAULT_CONFIG,
+      ...config,
+      // If links is empty, use defaults
+      links: config.links && config.links.length > 0 ? config.links : DEFAULT_CONFIG.links,
+      // If contacts is empty, use defaults
+      contacts: config.contacts && config.contacts.length > 0 ? config.contacts : DEFAULT_CONFIG.contacts
+    };
+    return merged;
   } catch (error) {
     console.error('Error reading config from KV:', error);
     return DEFAULT_CONFIG;

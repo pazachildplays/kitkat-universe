@@ -32,8 +32,16 @@
       "dest": "/api/admin/leaderboard.js"
     },
     {
+      "src": "/api/admin/reset",
+      "dest": "/api/admin/reset.js"
+    },
+    {
       "src": "/api/leaderboard",
       "dest": "/api/leaderboard.js"
+    },
+    {
+      "src": "/admin",
+      "dest": "/public/admin/index.html"
     },
     {
       "src": "/games",

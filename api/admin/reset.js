@@ -15,40 +15,11 @@ const DEFAULT_CONFIG = {
     { id: 4, name: 'Youtube', url: 'https://www.youtube.com/@KitKatUvU', icon: '▶️' },
     { id: 5, name: 'VGen', url: 'https://vgen.co/kitkaturvu', icon: '🎨' }
   ],
-  contacts: []
+  contacts: [
+    { id: 1, type: 'email', label: 'Email', value: 'contact@kitkat.com', icon: '📧' },
+    { id: 2, type: 'phone', label: 'Phone', value: '+1 (555) 123-4567', icon: '📱' }
+  ]
 };
-
-async function getConfig() {
-  try {
-    const config = await kv.get('kitkat:config');
-    if (!config) {
-      return DEFAULT_CONFIG;
-    }
-    // Merge with defaults to ensure all required fields exist
-    const merged = {
-      ...DEFAULT_CONFIG,
-      ...config,
-      // If links is empty, use defaults
-      links: config.links && config.links.length > 0 ? config.links : DEFAULT_CONFIG.links,
-      // If contacts is empty, use defaults
-      contacts: config.contacts && config.contacts.length > 0 ? config.contacts : DEFAULT_CONFIG.contacts
-    };
-    return merged;
-  } catch (error) {
-    console.error('Error reading config from KV:', error);
-    return DEFAULT_CONFIG;
-  }
-}
-
-async function saveConfig(config) {
-  try {
-    await kv.set('kitkat:config', config);
-    return true;
-  } catch (error) {
-    console.error('Error saving config to KV:', error);
-    return false;
-  }
-}
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -64,22 +35,21 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const { password, links } = req.body;
+    const { password } = req.body;
 
     if (password !== 'kitkat09') {
       return res.status(401).json({ success: false, message: 'Invalid password' });
     }
 
-    const config = await getConfig();
-    config.links = links || [];
-
-    if (await saveConfig(config)) {
-      res.status(200).json({ success: true, config });
-    } else {
-      res.status(500).json({ success: false, message: 'Error saving links' });
-    }
+    // Delete old config and set fresh defaults
+    await kv.del('kitkat:config');
+    await kv.set('kitkat:config', DEFAULT_CONFIG);
+    
+    console.log('KV cleared and reset with defaults successfully');
+    res.status(200).json({ success: true, message: 'Settings reset to defaults.', config: DEFAULT_CONFIG });
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error clearing KV:', error);
     res.status(500).json({ error: 'Server error' });
   }
 };
+

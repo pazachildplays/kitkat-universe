@@ -309,10 +309,13 @@ body#admin-page {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: nowrap;
+    gap: 15px;
 }
 
 .link-info {
     flex: 1;
+    min-width: 0;
 }
 
 .link-name {
@@ -329,6 +332,15 @@ body#admin-page {
 .link-actions {
     display: flex;
     gap: 10px;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.contact-actions {
+    display: flex;
+    gap: 10px;
+    flex-shrink: 0;
+    white-space: nowrap;
 }
 
 .btn-primary, .btn-secondary, .btn-danger {
@@ -338,6 +350,7 @@ body#admin-page {
     cursor: pointer;
     font-weight: 600;
     transition: all 0.3s ease;
+    flex-shrink: 0;
 }
 
 .btn-primary {
@@ -347,6 +360,14 @@ body#admin-page {
 
 .btn-primary:hover {
     opacity: 0.9;
+}
+
+.btn-edit {
+    background: #4CAF50 !important;
+}
+
+.btn-edit:hover {
+    background: #45a049 !important;
 }
 
 .btn-secondary {
@@ -470,11 +491,13 @@ body#admin-page {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: nowrap;
+    gap: 15px;
 }
 
 .contact-info {
     flex: 1;
-}
+    min-width: 0;
 
 .contact-label {
     font-weight: 600;
