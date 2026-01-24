@@ -166,16 +166,14 @@ function cancelAddLink() {
     document.getElementById('add-link-form').classList.add('hidden');
     document.getElementById('linkName').value = '';
     document.getElementById('linkUrl').value = '';
-    document.getElementById('linkIcon').value = '🔗';
     document.getElementById('linkIconFile').value = '';
-    document.getElementById('iconPreview').innerHTML = '🔗';
+    document.getElementById('iconPreview').innerHTML = '';
 }
 
 // Handle icon file upload preview
 document.addEventListener('DOMContentLoaded', function() {
     const iconFileInput = document.getElementById('linkIconFile');
     const iconPreview = document.getElementById('iconPreview');
-    const iconTextInput = document.getElementById('linkIcon');
     
     if (iconFileInput) {
         iconFileInput.addEventListener('change', function(e) {
@@ -189,38 +187,32 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-    
-    if (iconTextInput) {
-        iconTextInput.addEventListener('change', function() {
-            if (!document.getElementById('linkIconFile').value) {
-                iconPreview.innerHTML = this.value || '🔗';
-            }
-        });
-    }
 });
 
 async function saveNewLink() {
     const name = document.getElementById('linkName').value;
     const url = document.getElementById('linkUrl').value;
     const iconFileInput = document.getElementById('linkIconFile');
-    const iconTextInput = document.getElementById('linkIcon').value;
 
     if (!name || !url) {
         alert('Please fill in all fields');
         return;
     }
 
-    let icon = iconTextInput || '🔗';
-    
-    // If file is uploaded, convert to base64
-    if (iconFileInput.files.length > 0) {
-        const file = iconFileInput.files[0];
-        icon = await new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onload = (e) => resolve(e.target.result);
-            reader.readAsDataURL(file);
-        });
+    if (iconFileInput.files.length === 0) {
+        alert('Please upload an icon image');
+        return;
     }
+
+    let icon = '';
+    
+    // Convert file to base64
+    const file = iconFileInput.files[0];
+    icon = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.readAsDataURL(file);
+    });
 
     const newLink = {
         id: Date.now(),
