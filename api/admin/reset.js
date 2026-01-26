@@ -8,17 +8,8 @@ const DEFAULT_CONFIG = {
   footerColor: '#1a1a1a',
   textColor: '#ffffff',
   commissionsStatus: 'Open',
-  links: [
-    { id: 1, name: 'Twitter', url: 'https://x.com/KitkatUvU', icon: '𝕏' },
-    { id: 2, name: 'Twitch', url: 'https://www.twitch.tv/kitkaturvu', icon: '📺' },
-    { id: 3, name: 'Tiktok', url: 'https://www.tiktok.com/@kitkat.uvu', icon: '🎵' },
-    { id: 4, name: 'Youtube', url: 'https://www.youtube.com/@KitKatUvU', icon: '▶️' },
-    { id: 5, name: 'VGen', url: 'https://vgen.co/kitkaturvu', icon: '🎨' }
-  ],
-  contacts: [
-    { id: 1, type: 'email', label: 'Email', value: 'contact@kitkat.com', icon: '📧' },
-    { id: 2, type: 'phone', label: 'Phone', value: '+1 (555) 123-4567', icon: '📱' }
-  ]
+  links: [],
+  contacts: []
 };
 
 module.exports = async (req, res) => {

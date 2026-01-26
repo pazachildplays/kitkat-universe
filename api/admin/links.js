@@ -8,13 +8,7 @@ const DEFAULT_CONFIG = {
   footerColor: '#1a1a1a',
   textColor: '#ffffff',
   commissionsStatus: 'Open',
-  links: [
-    { id: 1, name: 'Twitter', url: 'https://x.com/KitkatUvU', icon: '𝕏' },
-    { id: 2, name: 'Twitch', url: 'https://www.twitch.tv/kitkaturvu', icon: '📺' },
-    { id: 3, name: 'Tiktok', url: 'https://www.tiktok.com/@kitkat.uvu', icon: '🎵' },
-    { id: 4, name: 'Youtube', url: 'https://www.youtube.com/@KitKatUvU', icon: '▶️' },
-    { id: 5, name: 'VGen', url: 'https://vgen.co/kitkaturvu', icon: '🎨' }
-  ],
+  links: [],
   contacts: []
 };
 
