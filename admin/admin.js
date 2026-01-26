@@ -218,9 +218,12 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 async function saveNewLink() {
+    console.log('saveNewLink called');
     const name = document.getElementById('linkName').value;
     const url = document.getElementById('linkUrl').value;
     const iconFileInput = document.getElementById('linkIconFile');
+
+    console.log('Name:', name, 'URL:', url, 'Has file:', iconFileInput.files.length > 0, 'Password set:', !!adminPassword);
 
     if (!name || !url) {
         alert('Please fill in all fields');
@@ -232,25 +235,32 @@ async function saveNewLink() {
         return;
     }
 
-    // Convert file to base64
-    const file = iconFileInput.files[0];
-    const icon = await new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = (e) => resolve(e.target.result);
-        reader.readAsDataURL(file);
-    });
-
-    const newLink = {
-        id: Date.now(),
-        name,
-        url,
-        icon
-    };
-
-    currentConfig.links = currentConfig.links || [];
-    currentConfig.links.push(newLink);
+    if (!adminPassword) {
+        alert('You must be logged in to save links');
+        return;
+    }
 
     try {
+        // Convert file to base64
+        const file = iconFileInput.files[0];
+        const icon = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target.result);
+            reader.readAsDataURL(file);
+        });
+
+        const newLink = {
+            id: Date.now(),
+            name,
+            url,
+            icon
+        };
+
+        currentConfig.links = currentConfig.links || [];
+        currentConfig.links.push(newLink);
+
+        console.log('Sending links to API:', currentConfig.links.length, 'links');
+
         const response = await fetch('/api/admin/links', {
             method: 'POST',
             headers: {
@@ -262,15 +272,23 @@ async function saveNewLink() {
             })
         });
 
+        console.log('Response status:', response.status);
         const data = await response.json();
+        console.log('Response data:', data);
+
         if (data.success) {
+            alert('✓ Link saved successfully!');
             cancelAddLink();
             displayLinks();
             document.getElementById('linkCount').textContent = currentConfig.links.length;
+        } else {
+            alert('Error: ' + (data.message || 'Failed to save link'));
+            currentConfig.links.pop(); // Remove the link we just added
         }
     } catch (error) {
         console.error('Error saving link:', error);
-        alert('Failed to save link');
+        alert('Failed to save link: ' + error.message);
+        currentConfig.links.pop(); // Remove the link we just added
     }
 }
 
@@ -279,6 +297,8 @@ async function deleteLink(id) {
         return;
     }
 
+    console.log('Deleting link with ID:', id);
+    const deletedLink = currentConfig.links.find(link => link.id === id);
     currentConfig.links = currentConfig.links.filter(link => link.id !== id);
 
     try {
@@ -295,12 +315,17 @@ async function deleteLink(id) {
 
         const data = await response.json();
         if (data.success) {
+            alert('✓ Link deleted successfully!');
             displayLinks();
             document.getElementById('linkCount').textContent = currentConfig.links.length;
+        } else {
+            alert('Error: ' + (data.message || 'Failed to delete link'));
+            currentConfig.links.push(deletedLink); // Restore the link
         }
     } catch (error) {
         console.error('Error deleting link:', error);
-        alert('Failed to delete link');
+        alert('Failed to delete link: ' + error.message);
+        currentConfig.links.push(deletedLink); // Restore the link
     }
 }
 
@@ -339,6 +364,7 @@ function cancelEditLink() {
 }
 
 async function saveEditLink() {
+    console.log('saveEditLink called');
     const name = document.getElementById('editLinkName').value;
     const url = document.getElementById('editLinkUrl').value;
     const iconFileInput = document.getElementById('editLinkIconFile');
@@ -349,24 +375,29 @@ async function saveEditLink() {
     }
 
     const linkIndex = currentConfig.links.findIndex(l => l.id === currentEditingLinkId);
-    if (linkIndex === -1) return;
-
-    // Update name and URL
-    currentConfig.links[linkIndex].name = name;
-    currentConfig.links[linkIndex].url = url;
-
-    // Update icon if a new file was uploaded
-    if (iconFileInput.files.length > 0) {
-        const file = iconFileInput.files[0];
-        const newIcon = await new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onload = (e) => resolve(e.target.result);
-            reader.readAsDataURL(file);
-        });
-        currentConfig.links[linkIndex].icon = newIcon;
+    if (linkIndex === -1) {
+        alert('Link not found');
+        return;
     }
 
     try {
+        // Update name and URL
+        currentConfig.links[linkIndex].name = name;
+        currentConfig.links[linkIndex].url = url;
+
+        // Update icon if a new file was uploaded
+        if (iconFileInput.files.length > 0) {
+            const file = iconFileInput.files[0];
+            const newIcon = await new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.readAsDataURL(file);
+            });
+            currentConfig.links[linkIndex].icon = newIcon;
+        }
+
+        console.log('Sending updated link to API');
+
         const response = await fetch('/api/admin/links', {
             method: 'POST',
             headers: {
@@ -380,12 +411,15 @@ async function saveEditLink() {
 
         const data = await response.json();
         if (data.success) {
+            alert('✓ Link updated successfully!');
             cancelEditLink();
             displayLinks();
+        } else {
+            alert('Error: ' + (data.message || 'Failed to update link'));
         }
     } catch (error) {
         console.error('Error updating link:', error);
-        alert('Failed to update link');
+        alert('Failed to update link: ' + error.message);
     }
 }
 
