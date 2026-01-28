@@ -651,8 +651,6 @@ async function deleteContact(id) {
         currentConfig.contacts.push(deletedContact);
     }
 }
-    }
-}
 
 // Validate hex color
 function isValidHexColor(hex) {
