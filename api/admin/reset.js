@@ -1,4 +1,5 @@
-const { kv } = require('@vercel/kv');
+const fs = require('fs');
+const path = require('path');
 
 const DEFAULT_CONFIG = {
   title: 'Welcome to KitKat Universe',
@@ -11,6 +12,22 @@ const DEFAULT_CONFIG = {
   links: [],
   contacts: []
 };
+
+const configPath = process.env.VERCEL ? '/tmp/config.json' : path.join(process.cwd(), 'data', 'config.json');
+
+async function saveConfig(config) {
+  try {
+    const dir = path.dirname(configPath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf8');
+    return true;
+  } catch (error) {
+    console.error('Error saving config:', error);
+    return false;
+  }
+}
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -32,14 +49,15 @@ module.exports = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Invalid password' });
     }
 
-    // Delete old config and set fresh defaults
-    await kv.del('kitkat:config');
-    await kv.set('kitkat:config', DEFAULT_CONFIG);
-    
-    console.log('KV cleared and reset with defaults successfully');
-    res.status(200).json({ success: true, message: 'Settings reset to defaults.', config: DEFAULT_CONFIG });
+    // Reset config to defaults
+    if (await saveConfig(DEFAULT_CONFIG)) {
+      console.log('Config reset to defaults successfully');
+      res.status(200).json({ success: true, message: 'Settings reset to defaults.', config: DEFAULT_CONFIG });
+    } else {
+      res.status(500).json({ success: false, error: 'Failed to reset config' });
+    }
   } catch (error) {
-    console.error('Error clearing KV:', error);
+    console.error('Error resetting config:', error);
     res.status(500).json({ error: 'Server error' });
   }
 };

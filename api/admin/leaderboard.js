@@ -1,4 +1,5 @@
-const { kv } = require('@vercel/kv');
+const fs = require('fs');
+const path = require('path');
 
 const DEFAULT_CONFIG = {
   title: 'Welcome to KitKat Universe',
@@ -13,22 +14,31 @@ const DEFAULT_CONFIG = {
   leaderboards: {}
 };
 
+const configPath = process.env.VERCEL ? '/tmp/config.json' : path.join(process.cwd(), 'data', 'config.json');
+
 async function getConfig() {
   try {
-    const config = await kv.get('kitkat:config');
-    return config || DEFAULT_CONFIG;
+    if (fs.existsSync(configPath)) {
+      const data = fs.readFileSync(configPath, 'utf8');
+      return JSON.parse(data) || DEFAULT_CONFIG;
+    }
+    return DEFAULT_CONFIG;
   } catch (error) {
-    console.error('Error reading config from KV:', error);
+    console.error('Error reading config:', error);
     return DEFAULT_CONFIG;
   }
 }
 
 async function saveConfig(config) {
   try {
-    await kv.set('kitkat:config', config);
+    const dir = path.dirname(configPath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf8');
     return true;
   } catch (error) {
-    console.error('Error saving config to KV:', error);
+    console.error('Error saving config:', error);
     return false;
   }
 }
