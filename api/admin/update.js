@@ -1,4 +1,5 @@
-const { kv } = require('@vercel/kv');
+const fs = require('fs');
+const path = require('path');
 
 const DEFAULT_CONFIG = {
   title: 'Welcome to KitKat Universe',
@@ -21,34 +22,37 @@ const DEFAULT_CONFIG = {
   ]
 };
 
+const configPath = process.env.VERCEL ? '/tmp/config.json' : path.join(process.cwd(), 'data', 'config.json');
+
 async function getConfig() {
   try {
-    const config = await kv.get('kitkat:config');
-    if (!config) {
-      return DEFAULT_CONFIG;
+    if (fs.existsSync(configPath)) {
+      const data = fs.readFileSync(configPath, 'utf8');
+      const config = JSON.parse(data);
+      return {
+        ...DEFAULT_CONFIG,
+        ...config,
+        links: config.links && config.links.length > 0 ? config.links : DEFAULT_CONFIG.links,
+        contacts: config.contacts && config.contacts.length > 0 ? config.contacts : DEFAULT_CONFIG.contacts
+      };
     }
-    // Merge with defaults to ensure all required fields exist
-    const merged = {
-      ...DEFAULT_CONFIG,
-      ...config,
-      // If links is empty, use defaults
-      links: config.links && config.links.length > 0 ? config.links : DEFAULT_CONFIG.links,
-      // If contacts is empty, use defaults
-      contacts: config.contacts && config.contacts.length > 0 ? config.contacts : DEFAULT_CONFIG.contacts
-    };
-    return merged;
+    return DEFAULT_CONFIG;
   } catch (error) {
-    console.error('Error reading config from KV:', error);
+    console.error('Error reading config:', error);
     return DEFAULT_CONFIG;
   }
 }
 
 async function saveConfig(config) {
   try {
-    await kv.set('kitkat:config', config);
+    const dir = path.dirname(configPath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf8');
     return true;
   } catch (error) {
-    console.error('Error saving config to KV:', error);
+    console.error('Error saving config:', error);
     return false;
   }
 }
