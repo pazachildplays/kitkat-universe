@@ -165,13 +165,25 @@ function showAddLinkForm() {
 }
 
 function cancelAddLink() {
-    document.getElementById('add-link-form').classList.add('hidden');
-    document.getElementById('linkName').value = '';
-    document.getElementById('linkUrl').value = '';
-    document.getElementById('linkIconFile').value = '';
+    const addLinkForm = document.getElementById('add-link-form');
+    if (addLinkForm) {
+        addLinkForm.classList.add('hidden');
+    }
+    
+    const linkNameEl = document.getElementById('linkName');
+    if (linkNameEl) linkNameEl.value = '';
+    
+    const linkUrlEl = document.getElementById('linkUrl');
+    if (linkUrlEl) linkUrlEl.value = '';
+    
+    const linkIconFileEl = document.getElementById('linkIconFile');
+    if (linkIconFileEl) linkIconFileEl.value = '';
+    
     const iconPreview = document.getElementById('iconPreview');
-    iconPreview.innerHTML = 'No image selected';
-    iconPreview.style.display = 'flex';
+    if (iconPreview) {
+        iconPreview.innerHTML = 'No image selected';
+        iconPreview.style.display = 'flex';
+    }
 }
 
 // Handle icon file upload preview
@@ -394,13 +406,23 @@ function showEditLinkForm(linkId) {
 }
 
 function cancelEditLink() {
-    document.getElementById('edit-link-form').classList.add('hidden');
-    document.getElementById('editLinkName').value = '';
-    document.getElementById('editLinkUrl').value = '';
-    document.getElementById('editLinkIconFile').value = '';
+    const editLinkForm = document.getElementById('edit-link-form');
+    if (editLinkForm) editLinkForm.classList.add('hidden');
+    
+    const editLinkNameEl = document.getElementById('editLinkName');
+    if (editLinkNameEl) editLinkNameEl.value = '';
+    
+    const editLinkUrlEl = document.getElementById('editLinkUrl');
+    if (editLinkUrlEl) editLinkUrlEl.value = '';
+    
+    const editLinkIconFileEl = document.getElementById('editLinkIconFile');
+    if (editLinkIconFileEl) editLinkIconFileEl.value = '';
+    
     const editIconPreview = document.getElementById('editIconPreview');
-    editIconPreview.innerHTML = '';
-    editIconPreview.style.display = 'none';
+    if (editIconPreview) {
+        editIconPreview.innerHTML = '';
+        editIconPreview.style.display = 'none';
+    }
     currentEditingLinkId = null;
 }
 
@@ -516,10 +538,17 @@ function showAddContactForm() {
 }
 
 function cancelAddContact() {
-    document.getElementById('add-contact-form').classList.add('hidden');
-    document.getElementById('contactLabel').value = '';
-    document.getElementById('contactValue').value = '';
-    document.getElementById('contactIcon').value = '📧';
+    const addContactForm = document.getElementById('add-contact-form');
+    if (addContactForm) addContactForm.classList.add('hidden');
+    
+    const contactLabelEl = document.getElementById('contactLabel');
+    if (contactLabelEl) contactLabelEl.value = '';
+    
+    const contactValueEl = document.getElementById('contactValue');
+    if (contactValueEl) contactValueEl.value = '';
+    
+    const contactIconEl = document.getElementById('contactIcon');
+    if (contactIconEl) contactIconEl.value = '📧';
 }
 
 async function saveNewContact() {
@@ -528,7 +557,12 @@ async function saveNewContact() {
     const icon = document.getElementById('contactIcon').value;
 
     if (!label || !value) {
-        alert('Please fill in all fields');
+        alert('❌ Please fill in all fields');
+        return;
+    }
+
+    if (!adminPassword) {
+        alert('❌ You must be logged in to save contacts');
         return;
     }
 
@@ -536,7 +570,7 @@ async function saveNewContact() {
         id: Date.now(),
         label,
         value,
-        icon,
+        icon: icon || '📧',
         type: label.toLowerCase()
     };
 
@@ -544,6 +578,7 @@ async function saveNewContact() {
     currentConfig.contacts.push(newContact);
 
     try {
+        console.log('Saving contact:', newContact);
         const response = await fetch('/api/admin/update', {
             method: 'POST',
             headers: {
@@ -556,14 +591,20 @@ async function saveNewContact() {
         });
 
         const data = await response.json();
+        console.log('Contact save response:', data);
         if (data.success) {
             currentConfig = data.config;
+            alert('✓ Contact saved successfully!');
             cancelAddContact();
             displayContacts();
+        } else {
+            alert('❌ Error: ' + (data.message || 'Failed to save contact'));
+            currentConfig.contacts.pop();
         }
     } catch (error) {
         console.error('Error saving contact:', error);
-        alert('Failed to save contact');
+        alert('❌ Failed to save contact: ' + error.message);
+        currentConfig.contacts.pop();
     }
 }
 
@@ -584,10 +625,18 @@ function showEditContactForm(contactId) {
 }
 
 function cancelEditContact() {
-    document.getElementById('edit-contact-form').classList.add('hidden');
-    document.getElementById('editContactLabel').value = '';
-    document.getElementById('editContactValue').value = '';
-    document.getElementById('editContactIcon').value = '📧';
+    const editContactForm = document.getElementById('edit-contact-form');
+    if (editContactForm) editContactForm.classList.add('hidden');
+    
+    const editContactLabelEl = document.getElementById('editContactLabel');
+    if (editContactLabelEl) editContactLabelEl.value = '';
+    
+    const editContactValueEl = document.getElementById('editContactValue');
+    if (editContactValueEl) editContactValueEl.value = '';
+    
+    const editContactIconEl = document.getElementById('editContactIcon');
+    if (editContactIconEl) editContactIconEl.value = '📧';
+    
     currentEditingContactId = null;
 }
 
@@ -597,7 +646,12 @@ async function saveEditContact() {
     const icon = document.getElementById('editContactIcon').value;
 
     if (!label || !value) {
-        alert('Please fill in all fields');
+        alert('❌ Please fill in all fields');
+        return;
+    }
+
+    if (!adminPassword) {
+        alert('❌ You must be logged in to edit contacts');
         return;
     }
 
@@ -623,12 +677,15 @@ async function saveEditContact() {
         const data = await response.json();
         if (data.success) {
             currentConfig = data.config;
+            alert('✓ Contact updated successfully!');
             cancelEditContact();
             displayContacts();
+        } else {
+            alert('❌ Error: ' + (data.message || 'Failed to update contact'));
         }
     } catch (error) {
         console.error('Error updating contact:', error);
-        alert('Failed to update contact');
+        alert('❌ Failed to update contact: ' + error.message);
     }
 }
 
@@ -637,6 +694,12 @@ async function deleteContact(id) {
         return;
     }
 
+    if (!adminPassword) {
+        alert('❌ You must be logged in to delete contacts');
+        return;
+    }
+
+    const deletedContact = currentConfig.contacts.find(c => c.id === id);
     currentConfig.contacts = currentConfig.contacts.filter(contact => contact.id !== id);
 
     try {
@@ -654,11 +717,16 @@ async function deleteContact(id) {
         const data = await response.json();
         if (data.success) {
             currentConfig = data.config;
+            alert('✓ Contact deleted successfully!');
             displayContacts();
+        } else {
+            alert('❌ Error: ' + (data.message || 'Failed to delete contact'));
+            currentConfig.contacts.push(deletedContact);
         }
     } catch (error) {
         console.error('Error deleting contact:', error);
-        alert('Failed to delete contact');
+        alert('❌ Failed to delete contact: ' + error.message);
+        currentConfig.contacts.push(deletedContact);
     }
 }
 
@@ -677,9 +745,15 @@ async function saveSetting(key, value) {
         }
     }
     
+    if (!adminPassword) {
+        alert('❌ You must be logged in to save settings');
+        return;
+    }
+    
     const updates = { [key]: value };
 
     try {
+        console.log('Saving setting:', key, value);
         const response = await fetch('/api/admin/update', {
             method: 'POST',
             headers: {
@@ -691,16 +765,22 @@ async function saveSetting(key, value) {
             })
         });
 
+        console.log('Response status:', response.status);
         const data = await response.json();
+        console.log('Response data:', data);
+        
         if (data.success) {
             currentConfig = data.config;
             alert('✓ Setting saved successfully!');
             // Reload dashboard data to sync all fields
             loadDashboardData();
+        } else {
+            alert('❌ Error: ' + (data.message || 'Failed to save setting'));
+            console.error('API error:', data);
         }
     } catch (error) {
         console.error('Error saving setting:', error);
-        alert('Failed to save setting');
+        alert('❌ Failed to save setting: ' + error.message);
     }
 }
 
