@@ -165,13 +165,25 @@ function showAddLinkForm() {
 }
 
 function cancelAddLink() {
-    document.getElementById('add-link-form').classList.add('hidden');
-    document.getElementById('linkName').value = '';
-    document.getElementById('linkUrl').value = '';
-    document.getElementById('linkIconFile').value = '';
+    const addLinkForm = document.getElementById('add-link-form');
+    if (addLinkForm) {
+        addLinkForm.classList.add('hidden');
+    }
+    
+    const linkNameEl = document.getElementById('linkName');
+    if (linkNameEl) linkNameEl.value = '';
+    
+    const linkUrlEl = document.getElementById('linkUrl');
+    if (linkUrlEl) linkUrlEl.value = '';
+    
+    const linkIconFileEl = document.getElementById('linkIconFile');
+    if (linkIconFileEl) linkIconFileEl.value = '';
+    
     const iconPreview = document.getElementById('iconPreview');
-    iconPreview.innerHTML = 'No image selected';
-    iconPreview.style.display = 'flex';
+    if (iconPreview) {
+        iconPreview.innerHTML = 'No image selected';
+        iconPreview.style.display = 'flex';
+    }
 }
 
 // Handle icon file upload preview
@@ -376,13 +388,23 @@ function showEditLinkForm(linkId) {
 }
 
 function cancelEditLink() {
-    document.getElementById('edit-link-form').classList.add('hidden');
-    document.getElementById('editLinkName').value = '';
-    document.getElementById('editLinkUrl').value = '';
-    document.getElementById('editLinkIconFile').value = '';
+    const editLinkForm = document.getElementById('edit-link-form');
+    if (editLinkForm) editLinkForm.classList.add('hidden');
+    
+    const editLinkNameEl = document.getElementById('editLinkName');
+    if (editLinkNameEl) editLinkNameEl.value = '';
+    
+    const editLinkUrlEl = document.getElementById('editLinkUrl');
+    if (editLinkUrlEl) editLinkUrlEl.value = '';
+    
+    const editLinkIconFileEl = document.getElementById('editLinkIconFile');
+    if (editLinkIconFileEl) editLinkIconFileEl.value = '';
+    
     const editIconPreview = document.getElementById('editIconPreview');
-    editIconPreview.innerHTML = '';
-    editIconPreview.style.display = 'none';
+    if (editIconPreview) {
+        editIconPreview.innerHTML = '';
+        editIconPreview.style.display = 'none';
+    }
     currentEditingLinkId = null;
 }
 
@@ -475,10 +497,17 @@ function showAddContactForm() {
 }
 
 function cancelAddContact() {
-    document.getElementById('add-contact-form').classList.add('hidden');
-    document.getElementById('contactLabel').value = '';
-    document.getElementById('contactValue').value = '';
-    document.getElementById('contactIcon').value = '📧';
+    const addContactForm = document.getElementById('add-contact-form');
+    if (addContactForm) addContactForm.classList.add('hidden');
+    
+    const contactLabelEl = document.getElementById('contactLabel');
+    if (contactLabelEl) contactLabelEl.value = '';
+    
+    const contactValueEl = document.getElementById('contactValue');
+    if (contactValueEl) contactValueEl.value = '';
+    
+    const contactIconEl = document.getElementById('contactIcon');
+    if (contactIconEl) contactIconEl.value = '📧';
 }
 
 async function saveNewContact() {
@@ -555,10 +584,18 @@ function showEditContactForm(contactId) {
 }
 
 function cancelEditContact() {
-    document.getElementById('edit-contact-form').classList.add('hidden');
-    document.getElementById('editContactLabel').value = '';
-    document.getElementById('editContactValue').value = '';
-    document.getElementById('editContactIcon').value = '📧';
+    const editContactForm = document.getElementById('edit-contact-form');
+    if (editContactForm) editContactForm.classList.add('hidden');
+    
+    const editContactLabelEl = document.getElementById('editContactLabel');
+    if (editContactLabelEl) editContactLabelEl.value = '';
+    
+    const editContactValueEl = document.getElementById('editContactValue');
+    if (editContactValueEl) editContactValueEl.value = '';
+    
+    const editContactIconEl = document.getElementById('editContactIcon');
+    if (editContactIconEl) editContactIconEl.value = '📧';
+    
     currentEditingContactId = null;
 }
 
