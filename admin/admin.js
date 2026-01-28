@@ -487,7 +487,12 @@ async function saveNewContact() {
     const icon = document.getElementById('contactIcon').value;
 
     if (!label || !value) {
-        alert('Please fill in all fields');
+        alert('❌ Please fill in all fields');
+        return;
+    }
+
+    if (!adminPassword) {
+        alert('❌ You must be logged in to save contacts');
         return;
     }
 
@@ -495,7 +500,7 @@ async function saveNewContact() {
         id: Date.now(),
         label,
         value,
-        icon,
+        icon: icon || '📧',
         type: label.toLowerCase()
     };
 
@@ -503,6 +508,7 @@ async function saveNewContact() {
     currentConfig.contacts.push(newContact);
 
     try {
+        console.log('Saving contact:', newContact);
         const response = await fetch('/api/admin/update', {
             method: 'POST',
             headers: {
@@ -515,14 +521,20 @@ async function saveNewContact() {
         });
 
         const data = await response.json();
+        console.log('Contact save response:', data);
         if (data.success) {
             currentConfig = data.config;
+            alert('✓ Contact saved successfully!');
             cancelAddContact();
             displayContacts();
+        } else {
+            alert('❌ Error: ' + (data.message || 'Failed to save contact'));
+            currentConfig.contacts.pop();
         }
     } catch (error) {
         console.error('Error saving contact:', error);
-        alert('Failed to save contact');
+        alert('❌ Failed to save contact: ' + error.message);
+        currentConfig.contacts.pop();
     }
 }
 
@@ -556,7 +568,12 @@ async function saveEditContact() {
     const icon = document.getElementById('editContactIcon').value;
 
     if (!label || !value) {
-        alert('Please fill in all fields');
+        alert('❌ Please fill in all fields');
+        return;
+    }
+
+    if (!adminPassword) {
+        alert('❌ You must be logged in to edit contacts');
         return;
     }
 
@@ -582,12 +599,15 @@ async function saveEditContact() {
         const data = await response.json();
         if (data.success) {
             currentConfig = data.config;
+            alert('✓ Contact updated successfully!');
             cancelEditContact();
             displayContacts();
+        } else {
+            alert('❌ Error: ' + (data.message || 'Failed to update contact'));
         }
     } catch (error) {
         console.error('Error updating contact:', error);
-        alert('Failed to update contact');
+        alert('❌ Failed to update contact: ' + error.message);
     }
 }
 
@@ -596,6 +616,12 @@ async function deleteContact(id) {
         return;
     }
 
+    if (!adminPassword) {
+        alert('❌ You must be logged in to delete contacts');
+        return;
+    }
+
+    const deletedContact = currentConfig.contacts.find(c => c.id === id);
     currentConfig.contacts = currentConfig.contacts.filter(contact => contact.id !== id);
 
     try {
@@ -613,11 +639,18 @@ async function deleteContact(id) {
         const data = await response.json();
         if (data.success) {
             currentConfig = data.config;
+            alert('✓ Contact deleted successfully!');
             displayContacts();
+        } else {
+            alert('❌ Error: ' + (data.message || 'Failed to delete contact'));
+            currentConfig.contacts.push(deletedContact);
         }
     } catch (error) {
         console.error('Error deleting contact:', error);
-        alert('Failed to delete contact');
+        alert('❌ Failed to delete contact: ' + error.message);
+        currentConfig.contacts.push(deletedContact);
+    }
+}
     }
 }
 
@@ -636,9 +669,15 @@ async function saveSetting(key, value) {
         }
     }
     
+    if (!adminPassword) {
+        alert('❌ You must be logged in to save settings');
+        return;
+    }
+    
     const updates = { [key]: value };
 
     try {
+        console.log('Saving setting:', key, value);
         const response = await fetch('/api/admin/update', {
             method: 'POST',
             headers: {
@@ -650,16 +689,22 @@ async function saveSetting(key, value) {
             })
         });
 
+        console.log('Response status:', response.status);
         const data = await response.json();
+        console.log('Response data:', data);
+        
         if (data.success) {
             currentConfig = data.config;
             alert('✓ Setting saved successfully!');
             // Reload dashboard data to sync all fields
             loadDashboardData();
+        } else {
+            alert('❌ Error: ' + (data.message || 'Failed to save setting'));
+            console.error('API error:', data);
         }
     } catch (error) {
         console.error('Error saving setting:', error);
-        alert('Failed to save setting');
+        alert('❌ Failed to save setting: ' + error.message);
     }
 }
 
