@@ -1,3 +1,4 @@
+const { kv } = require('@vercel/kv');
 const fs = require('fs');
 const path = require('path');
 
@@ -13,10 +14,17 @@ const DEFAULT_CONFIG = {
   contacts: []
 };
 
-const configPath = process.env.VERCEL ? '/tmp/config.json' : path.join(process.cwd(), 'data', 'config.json');
+const configPath = path.join(process.cwd(), 'data', 'config.json');
 
 async function saveConfig(config) {
   try {
+    // Save to KV if available (on Vercel)
+    if (process.env.REDIS_URL) {
+      await kv.set('kitkat:config', config);
+      return true;
+    }
+    
+    // Fallback to local file
     const dir = path.dirname(configPath);
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });

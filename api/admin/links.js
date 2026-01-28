@@ -1,3 +1,4 @@
+const { kv } = require('@vercel/kv');
 const fs = require('fs');
 const path = require('path');
 
@@ -13,10 +14,24 @@ const DEFAULT_CONFIG = {
   contacts: []
 };
 
-const configPath = process.env.VERCEL ? '/tmp/config.json' : path.join(process.cwd(), 'data', 'config.json');
+const configPath = path.join(process.cwd(), 'data', 'config.json');
 
 async function getConfig() {
   try {
+    // Try KV first (on Vercel)
+    if (process.env.REDIS_URL) {
+      const config = await kv.get('kitkat:config');
+      if (config) {
+        return {
+          ...DEFAULT_CONFIG,
+          ...config,
+          links: config.links && config.links.length > 0 ? config.links : DEFAULT_CONFIG.links,
+          contacts: config.contacts && config.contacts.length > 0 ? config.contacts : DEFAULT_CONFIG.contacts
+        };
+      }
+    }
+    
+    // Fallback to local file
     if (fs.existsSync(configPath)) {
       const data = fs.readFileSync(configPath, 'utf8');
       const config = JSON.parse(data);
@@ -36,6 +51,13 @@ async function getConfig() {
 
 async function saveConfig(config) {
   try {
+    // Save to KV if available (on Vercel)
+    if (process.env.REDIS_URL) {
+      await kv.set('kitkat:config', config);
+      return true;
+    }
+    
+    // Fallback to local file
     const dir = path.dirname(configPath);
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });

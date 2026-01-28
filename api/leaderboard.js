@@ -1,3 +1,4 @@
+const { kv } = require('@vercel/kv');
 const fs = require('fs');
 const path = require('path');
 
@@ -5,10 +6,17 @@ const DEFAULT_CONFIG = {
   leaderboards: {}
 };
 
-const configPath = process.env.VERCEL ? '/tmp/config.json' : path.join(process.cwd(), 'data', 'config.json');
+const configPath = path.join(process.cwd(), 'data', 'config.json');
 
 async function getConfig() {
   try {
+    // Try KV first (on Vercel)
+    if (process.env.REDIS_URL) {
+      const config = await kv.get('kitkat:config');
+      return config || DEFAULT_CONFIG;
+    }
+    
+    // Fallback to local file
     if (fs.existsSync(configPath)) {
       const data = fs.readFileSync(configPath, 'utf8');
       return JSON.parse(data) || DEFAULT_CONFIG;
