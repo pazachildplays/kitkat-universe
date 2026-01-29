@@ -9,8 +9,7 @@ const DEFAULT_CONFIG = {
   textColor: '#ffffff',
   commissionsStatus: 'Open',
   links: [],
-  contacts: [],
-  leaderboards: {}
+  contacts: []
 };
 
 // --- Firebase Admin SDK setup ---
@@ -72,41 +71,23 @@ exports.handler = async (event, context) => {
 
   try {
     const body = event.body ? JSON.parse(event.body) : {};
-    const { game, playerName, score } = body;
-    const numScore = Number(score);
-    
-    if (!game || !playerName || isNaN(numScore)) {
-      return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing parameters or invalid score' }) };
+    const { password, links } = body;
+
+    if (password !== process.env.ADMIN_PASSWORD) {
+      return { statusCode: 401, headers, body: JSON.stringify({ success: false, message: 'Invalid password' }) };
     }
-    
+
     const config = await getConfig();
-    config.leaderboards = config.leaderboards || {};
-    config.leaderboards[game] = config.leaderboards[game] || [];
-    
-    // Check if player already exists
-    const existingIndex = config.leaderboards[game].findIndex(e => e.playerName === playerName);
-    
-    if (existingIndex >= 0) {
-      // Update if new score is higher
-      if (numScore > config.leaderboards[game][existingIndex].score) {
-        config.leaderboards[game][existingIndex].score = numScore;
-      }
-    } else {
-      // Add new entry
-      config.leaderboards[game].push({ playerName, score: numScore });
-    }
-    
-    // Sort by score descending
-    config.leaderboards[game].sort((a, b) => b.score - a.score);
-    
+    config.links = links || [];
+
     const result = await saveConfig(config);
     if (result.success) {
-      return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
+      return { statusCode: 200, headers, body: JSON.stringify({ success: true, config }) };
     } else {
-      return { statusCode: 500, headers, body: JSON.stringify({ error: result.error || 'Failed to save leaderboard' }) };
+      return { statusCode: 500, headers, body: JSON.stringify({ success: false, message: result.error || 'Error saving links' }) };
     }
   } catch (error) {
-    console.error('Error:', error);
-    return { statusCode: 500, headers, body: JSON.stringify({ error: error.message }) };
+    console.error('Links API Error:', error);
+    return { statusCode: 500, headers, body: JSON.stringify({ error: 'Server error', details: error.message }) };
   }
 };

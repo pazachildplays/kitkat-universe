@@ -841,3 +841,25 @@ setInterval(() => {
         loadDashboardData();
     }
 }, 5000);
+
+// --- Expose functions to HTML ---
+window.handleLoginKeyPress = handleLoginKeyPress;
+window.adminLogin = adminLogin;
+window.switchTab = switchTab;
+window.adminLogout = adminLogout;
+window.openPreview = openPreview;
+window.showAddLinkForm = showAddLinkForm;
+window.saveNewLink = saveNewLink;
+window.cancelAddLink = cancelAddLink;
+window.saveEditLink = saveEditLink;
+window.cancelEditLink = cancelEditLink;
+window.showEditLinkForm = showEditLinkForm;
+window.deleteLink = deleteLink;
+window.saveSetting = saveSetting;
+window.showAddContactForm = showAddContactForm;
+window.saveNewContact = saveNewContact;
+window.cancelAddContact = cancelAddContact;
+window.saveEditContact = saveEditContact;
+window.cancelEditContact = cancelEditContact;
+window.showEditContactForm = showEditContactForm;
+window.deleteContact = deleteContact;

@@ -1,78 +1,73 @@
-# Deploy to Vercel
+# Deploy to Netlify
 
 ## Prerequisites
-1. Have a Vercel account (https://vercel.com)
+1. Have a Netlify account (https://netlify.com)
 2. Have your project on GitHub/GitLab/Bitbucket
+3. Have a Firebase project set up (for database)
 
 ## Deployment Steps
 
-### Option 1: Using Vercel CLI (Recommended)
+### Option 1: Using Netlify CLI (Recommended)
 
-1. **Install Vercel CLI**
+1. **Install Netlify CLI**
    ```bash
-   npm i -g vercel
+   npm i -g netlify-cli
    ```
 
-2. **Login to Vercel**
+2. **Login to Netlify**
    ```bash
-   vercel login
+   netlify login
    ```
 
 3. **Deploy the project**
    ```bash
-   vercel
+   netlify deploy --prod
    ```
 
 4. **Follow the prompts:**
-   - Set project name (e.g., `kitkat-universe`)
-   - Select framework: Choose "Other" or just press Enter
-   - Confirm deployment location
+   - Create a new site
+   - Select your team
+   - Site name (optional)
+   - Publish directory: `public` (Netlify will detect this from netlify.toml)
 
-### Option 2: Using Git Integration (Recommended for Future Updates)
+### Option 2: Using Git Integration
 
 1. **Push your project to GitHub**
-   ```bash
-   git init
-   git add .
-   git commit -m "Initial commit"
-   git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO.git
-   git push -u origin main
-   ```
-
-2. **Connect to Vercel via GitHub**
-   - Go to https://vercel.com/new
-   - Select "GitHub" import
-   - Find and select your repository
-   - Accept default settings
-   - Click "Deploy"
+2. **Log in to Netlify Dashboard**
+3. **Click "Add new site" > "Import from Git"**
+4. **Select your repository**
+5. **Build settings:**
+   - Build command: `npm install` (if needed)
+   - Publish directory: `public` (Netlify will detect this from netlify.toml)
+   - Functions directory: `api`
 
 ## Environment Variables Setup
 
-After deploying, you need to set up Vercel KV (for persistent storage):
+You must set these variables in **Site settings > Build & deploy > Environment**:
 
-1. **Go to your Vercel dashboard**
-2. **Select your project**
-3. **Go to Storage tab → Create KV Database**
-4. **Link the KV database to your project**
-
-The environment variables will be automatically set up.
+1. **`FIREBASE_SERVICE_ACCOUNT`**
+   - The entire content of your Firebase service account JSON file.
+   - *Note: Remove newlines if pasting into some UI fields, though Netlify handles JSON well.*
+2. **`ADMIN_PASSWORD`**
+   - The password for the admin panel (e.g., `kitkat09`).
 
 ## Important Configuration Files
 
-- `vercel.json` - Deployment configuration
-- `.vercelignore` - Files to exclude from deployment
+- `netlify.toml` - Netlify configuration (redirects and build settings)
 - `api/` - API endpoints (Node.js serverless functions)
 - `public/` - Static files (HTML, CSS, JS)
 
 ## Data Persistence
 
-Your app uses Vercel KV for:
+Your app uses **Firebase Firestore** for:
 - Config (title, colors, links, contacts)
 - Game leaderboards
 
-All data is automatically persisted in the cloud.
+Data is stored in the `settings` collection, document `main`.
 
 ## API Endpoints (After Deployment)
+
+Base URL: `https://YOUR-SITE.netlify.app`
 
 - `GET /` - Main page
 - `GET /games` - Games page
@@ -86,26 +81,23 @@ All data is automatically persisted in the cloud.
 
 ## Troubleshooting
 
-**Issue: KV Database not working**
-- Solution: Check that KV database is properly linked in Vercel project settings
+**Issue: 500 Error on Save**
+- Solution: Check that `FIREBASE_SERVICE_ACCOUNT` is set correctly in Netlify environment variables.
 
-**Issue: 404 errors on static files**
-- Solution: Make sure all files in `public/` folder are present
-
-**Issue: Admin panel not saving**
-- Solution: Check KV connection and verify API routes are accessible
+**Issue: 404 on API calls**
+- Solution: Ensure `netlify.toml` is in the root directory.
 
 ## Local Testing Before Deployment
 
 ```bash
-npm install
-npm start
+npm install netlify-cli -g
+netlify dev
 ```
 
 Visit http://localhost:3000
 
 ## After Deployment
 
-Your site will be live at: `https://YOUR_PROJECT_NAME.vercel.app`
+Your site will be live at: `https://YOUR_PROJECT_NAME.netlify.app`
 
 Share this link with your users!

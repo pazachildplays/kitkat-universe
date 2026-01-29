@@ -1,6 +1,4 @@
-const { kv } = require('@vercel/kv');
-const fs = require('fs');
-const path = require('path');
+const admin = require('firebase-admin');
 
 const DEFAULT_CONFIG = {
   title: 'Welcome to KitKat Universe',
@@ -14,59 +12,65 @@ const DEFAULT_CONFIG = {
   contacts: []
 };
 
-const configPath = path.join(process.cwd(), 'data', 'config.json');
+// --- Firebase Admin SDK setup ---
+if (!admin.apps.length) {
+  try {
+    admin.initializeApp({
+      credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT))
+    });
+  } catch (e) {
+    console.error('Firebase admin initialization error', e.stack);
+  }
+}
+const db = admin.firestore();
+const configRef = db.collection('settings').doc('main');
+// --- End of Firebase setup ---
 
 async function saveConfig(config) {
   try {
-    // Save to KV if available (on Vercel)
-    if (process.env.REDIS_URL) {
-      await kv.set('kitkat:config', config);
-      return true;
-    }
-    
-    // Fallback to local file
-    const dir = path.dirname(configPath);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf8');
-    return true;
+    // Overwrite the document completely with the default config
+    await configRef.set(config);
+    return { success: true };
   } catch (error) {
-    console.error('Error saving config:', error);
-    return false;
+    console.error('Error saving config to Firebase:', error);
+    return { success: false, error: error.message };
   }
 }
 
-module.exports = async (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+exports.handler = async (event, context) => {
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Content-Type': 'application/json'
+  };
 
-  if (req.method === 'OPTIONS') {
-    return res.status(200).json({ ok: true });
+  if (event.httpMethod === 'OPTIONS') {
+    return { statusCode: 200, headers, body: '' };
   }
 
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+  if (event.httpMethod !== 'POST') {
+    return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
   }
 
   try {
-    const { password } = req.body;
+    const body = event.body ? JSON.parse(event.body) : {};
+    const { password } = body;
 
-    if (password !== 'kitkat09') {
-      return res.status(401).json({ success: false, message: 'Invalid password' });
+    if (password !== process.env.ADMIN_PASSWORD) {
+      return { statusCode: 401, headers, body: JSON.stringify({ success: false, message: 'Invalid password' }) };
     }
 
     // Reset config to defaults
-    if (await saveConfig(DEFAULT_CONFIG)) {
+    const result = await saveConfig(DEFAULT_CONFIG);
+    if (result.success) {
       console.log('Config reset to defaults successfully');
-      res.status(200).json({ success: true, message: 'Settings reset to defaults.', config: DEFAULT_CONFIG });
+      return { statusCode: 200, headers, body: JSON.stringify({ success: true, message: 'Settings reset to defaults.', config: DEFAULT_CONFIG }) };
     } else {
-      res.status(500).json({ success: false, error: 'Failed to reset config' });
+      return { statusCode: 500, headers, body: JSON.stringify({ success: false, error: result.error || 'Failed to reset config' }) };
     }
   } catch (error) {
     console.error('Error resetting config:', error);
-    res.status(500).json({ error: 'Server error' });
+    return { statusCode: 500, headers, body: JSON.stringify({ error: 'Server error' }) };
   }
 };
-

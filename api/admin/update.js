@@ -1,6 +1,4 @@
-const { kv } = require('@vercel/kv');
-const fs = require('fs');
-const path = require('path');
+const admin = require('firebase-admin');
 
 const DEFAULT_CONFIG = {
   title: 'Welcome to KitKat Universe',
@@ -23,96 +21,82 @@ const DEFAULT_CONFIG = {
   ]
 };
 
-const configPath = path.join(process.cwd(), 'data', 'config.json');
+// --- Firebase Admin SDK setup ---
+if (!admin.apps.length) {
+  try {
+    admin.initializeApp({
+      credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT))
+    });
+  } catch (e) {
+    console.error('Firebase admin initialization error', e.stack);
+  }
+}
+const db = admin.firestore();
+const configRef = db.collection('settings').doc('main');
+// --- End of Firebase setup ---
 
 async function getConfig() {
   try {
-    // Try KV first (on Vercel)
-    if (process.env.REDIS_URL) {
-      const config = await kv.get('kitkat:config');
-      if (config) {
-        return {
-          ...DEFAULT_CONFIG,
-          ...config,
-          links: config.links && config.links.length > 0 ? config.links : DEFAULT_CONFIG.links,
-          contacts: config.contacts && config.contacts.length > 0 ? config.contacts : DEFAULT_CONFIG.contacts
-        };
-      }
+    const doc = await configRef.get();
+    if (doc.exists) {
+      const data = doc.data();
+      // Merge with defaults to ensure all keys are present
+      return { ...DEFAULT_CONFIG, ...data };
     }
-    
-    // Fallback to local file
-    if (fs.existsSync(configPath)) {
-      const data = fs.readFileSync(configPath, 'utf8');
-      const config = JSON.parse(data);
-      return {
-        ...DEFAULT_CONFIG,
-        ...config,
-        links: config.links && config.links.length > 0 ? config.links : DEFAULT_CONFIG.links,
-        contacts: config.contacts && config.contacts.length > 0 ? config.contacts : DEFAULT_CONFIG.contacts
-      };
-    }
+    // If no config exists in Firebase, return the default
     return DEFAULT_CONFIG;
   } catch (error) {
-    console.error('Error reading config:', error);
+    console.error('Error reading config from Firebase:', error);
     return DEFAULT_CONFIG;
   }
 }
 
 async function saveConfig(config) {
   try {
-    // Save to KV if available (on Vercel)
-    if (process.env.REDIS_URL) {
-      await kv.set('kitkat:config', config);
-      return true;
-    }
-    
-    // Fallback to local file
-    const dir = path.dirname(configPath);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf8');
-    return true;
+    // Set with merge to avoid accidentally removing fields
+    await configRef.set(config, { merge: true });
+    return { success: true };
   } catch (error) {
-    console.error('Error saving config:', error);
-    return false;
+    console.error('Error saving config to Firebase:', error);
+    return { success: false, error: error.message };
   }
 }
 
-module.exports = async (req, res) => {
+exports.handler = async (event, context) => {
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Content-Type': 'application/json'
+  };
+
+  if (event.httpMethod === 'OPTIONS') {
+    return { statusCode: 200, headers, body: '' };
+  }
+
+  if (event.httpMethod !== 'POST') {
+    return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
+  }
+
   try {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-    res.setHeader('Content-Type', 'application/json');
+    const body = event.body ? JSON.parse(event.body) : {};
+    const { password, updates } = body;
 
-    if (req.method === 'OPTIONS') {
-      res.status(200).end();
-      return;
-    }
-
-    if (req.method !== 'POST') {
-      res.status(405).json({ error: 'Method not allowed' });
-      return;
-    }
-
-    const { password, updates } = req.body;
-
-    if (password !== 'kitkat09') {
-      res.status(401).json({ success: false, message: 'Invalid password' });
-      return;
+    if (password !== process.env.ADMIN_PASSWORD) {
+      return { statusCode: 401, headers, body: JSON.stringify({ success: false, message: 'Invalid password' }) };
     }
 
     const config = await getConfig();
     const updatedConfig = { ...config, ...updates };
 
-    if (await saveConfig(updatedConfig)) {
-      res.status(200).json({ success: true, config: updatedConfig });
+    const result = await saveConfig(updatedConfig);
+    if (result.success) {
+      return { statusCode: 200, headers, body: JSON.stringify({ success: true, config: updatedConfig }) };
     } else {
-      res.status(500).json({ success: false, message: 'Error saving config' });
+      return { statusCode: 500, headers, body: JSON.stringify({ success: false, message: result.error || 'Error saving config' }) };
     }
   } catch (error) {
     console.error('Update API Error:', error);
-    res.status(500).json({ error: 'Server error', details: error.message });
+    return { statusCode: 500, headers, body: JSON.stringify({ error: 'Server error', details: error.message }) };
   }
 };

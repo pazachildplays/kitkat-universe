@@ -1,59 +1,66 @@
-const { kv } = require('@vercel/kv');
-const fs = require('fs');
-const path = require('path');
+const admin = require('firebase-admin');
 
 const DEFAULT_CONFIG = {
   leaderboards: {}
 };
 
-const configPath = path.join(process.cwd(), 'data', 'config.json');
+// --- Firebase Admin SDK setup ---
+if (!admin.apps.length) {
+  try {
+    admin.initializeApp({
+      credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT))
+    });
+  } catch (e) {
+    console.error('Firebase admin initialization error', e.stack);
+  }
+}
+const db = admin.firestore();
+const configRef = db.collection('settings').doc('main');
+// --- End of Firebase setup ---
 
 async function getConfig() {
   try {
-    // Try KV first (on Vercel)
-    if (process.env.REDIS_URL) {
-      const config = await kv.get('kitkat:config');
-      return config || DEFAULT_CONFIG;
-    }
-    
-    // Fallback to local file
-    if (fs.existsSync(configPath)) {
-      const data = fs.readFileSync(configPath, 'utf8');
-      return JSON.parse(data) || DEFAULT_CONFIG;
+    const doc = await configRef.get();
+    if (doc.exists) {
+      const data = doc.data();
+      return data || DEFAULT_CONFIG;
     }
     return DEFAULT_CONFIG;
   } catch (error) {
-    console.error('Error reading config:', error);
+    console.error('Error reading config from Firebase:', error);
     return DEFAULT_CONFIG;
   }
 }
 
-module.exports = async (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+exports.handler = async (event, context) => {
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Content-Type': 'application/json'
+  };
 
-  if (req.method === 'OPTIONS') {
-    return res.status(200).json({ ok: true });
+  if (event.httpMethod === 'OPTIONS') {
+    return { statusCode: 200, headers, body: '' };
   }
 
-  if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
+  if (event.httpMethod !== 'GET') {
+    return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
   }
 
   try {
-    const game = req.query.game;
+    const game = event.queryStringParameters.game;
     
     if (!game) {
-      return res.status(400).json({ error: 'Missing game parameter' });
+      return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing game parameter' }) };
     }
     
     const config = await getConfig();
     const leaderboard = config.leaderboards?.[game] || [];
     
-    res.json(leaderboard);
+    return { statusCode: 200, headers, body: JSON.stringify(leaderboard) };
   } catch (error) {
     console.error('Error:', error);
-    res.status(500).json({ error: error.message });
+    return { statusCode: 500, headers, body: JSON.stringify({ error: error.message }) };
   }
 };

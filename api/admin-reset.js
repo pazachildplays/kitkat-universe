@@ -26,26 +26,10 @@ const db = admin.firestore();
 const configRef = db.collection('settings').doc('main');
 // --- End of Firebase setup ---
 
-async function getConfig() {
-  try {
-    const doc = await configRef.get();
-    if (doc.exists) {
-      const data = doc.data();
-      // Merge with defaults to ensure all keys are present
-      return { ...DEFAULT_CONFIG, ...data };
-    }
-    // If no config exists in Firebase, return the default
-    return DEFAULT_CONFIG;
-  } catch (error) {
-    console.error('Error reading config from Firebase:', error);
-    return DEFAULT_CONFIG;
-  }
-}
-
 async function saveConfig(config) {
   try {
-    // Set with merge to avoid accidentally removing fields
-    await configRef.set(config, { merge: true });
+    // Overwrite the document completely with the default config
+    await configRef.set(config);
     return { success: true };
   } catch (error) {
     console.error('Error saving config to Firebase:', error);
@@ -71,23 +55,22 @@ exports.handler = async (event, context) => {
 
   try {
     const body = event.body ? JSON.parse(event.body) : {};
-    const { password, links } = body;
+    const { password } = body;
 
     if (password !== process.env.ADMIN_PASSWORD) {
       return { statusCode: 401, headers, body: JSON.stringify({ success: false, message: 'Invalid password' }) };
     }
 
-    const config = await getConfig();
-    config.links = links || [];
-
-    const result = await saveConfig(config);
+    // Reset config to defaults
+    const result = await saveConfig(DEFAULT_CONFIG);
     if (result.success) {
-      return { statusCode: 200, headers, body: JSON.stringify({ success: true, config }) };
+      console.log('Config reset to defaults successfully');
+      return { statusCode: 200, headers, body: JSON.stringify({ success: true, message: 'Settings reset to defaults.', config: DEFAULT_CONFIG }) };
     } else {
-      return { statusCode: 500, headers, body: JSON.stringify({ success: false, message: result.error || 'Error saving links' }) };
+      return { statusCode: 500, headers, body: JSON.stringify({ success: false, error: result.error || 'Failed to reset config' }) };
     }
   } catch (error) {
-    console.error('Links API Error:', error);
-    return { statusCode: 500, headers, body: JSON.stringify({ error: 'Server error', details: error.message }) };
+    console.error('Error resetting config:', error);
+    return { statusCode: 500, headers, body: JSON.stringify({ error: 'Server error' }) };
   }
 };

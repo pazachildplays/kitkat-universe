@@ -1,6 +1,4 @@
-const { kv } = require('@vercel/kv');
-const fs = require('fs');
-const path = require('path');
+const admin = require('firebase-admin');
 
 const DEFAULT_CONFIG = {
   title: 'Welcome to KitKat Universe',
@@ -14,56 +12,55 @@ const DEFAULT_CONFIG = {
   contacts: []
 };
 
+// --- Firebase Admin SDK setup ---
+if (!admin.apps.length) {
+  try {
+    admin.initializeApp({
+      credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT))
+    });
+  } catch (e) {
+    console.error('Firebase admin initialization error', e.stack);
+  }
+}
+const db = admin.firestore();
+const configRef = db.collection('settings').doc('main');
+// --- End of Firebase setup ---
+
 async function getConfig() {
   try {
-    // Try Redis on Vercel
-    if (process.env.REDIS_URL) {
-      try {
-        const config = await kv.get('kitkat:config');
-        if (config) {
-          return { ...DEFAULT_CONFIG, ...config };
-        }
-      } catch (kvError) {
-        console.error('KV Error:', kvError);
-      }
+    const doc = await configRef.get();
+    if (doc.exists) {
+      const data = doc.data();
+      return { ...DEFAULT_CONFIG, ...data };
     }
-    
-    // Fallback to file system
-    const configPath = path.join(process.cwd(), 'data', 'config.json');
-    if (fs.existsSync(configPath)) {
-      const data = fs.readFileSync(configPath, 'utf8');
-      const parsed = JSON.parse(data);
-      return { ...DEFAULT_CONFIG, ...parsed };
-    }
-    
     return DEFAULT_CONFIG;
   } catch (error) {
-    console.error('Error reading config:', error);
+    console.error('Error reading config from Firebase:', error);
     return DEFAULT_CONFIG;
   }
 }
 
-module.exports = async (req, res) => {
+exports.handler = async (event, context) => {
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Content-Type': 'application/json'
+  };
+
+  if (event.httpMethod === 'OPTIONS') {
+    return { statusCode: 200, headers, body: '' };
+  }
+
+  if (event.httpMethod !== 'GET') {
+    return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
+  }
+
   try {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-    res.setHeader('Content-Type', 'application/json');
-
-    if (req.method === 'OPTIONS') {
-      res.status(200).end();
-      return;
-    }
-
-    if (req.method !== 'GET') {
-      res.status(405).json({ error: 'Method not allowed' });
-      return;
-    }
-
     const config = await getConfig();
-    res.status(200).json(config);
+    return { statusCode: 200, headers, body: JSON.stringify(config) };
   } catch (error) {
     console.error('API Error:', error);
-    res.status(500).json({ error: 'Server error', details: error.message });
+    return { statusCode: 500, headers, body: JSON.stringify({ error: 'Server error', details: error.message }) };
   }
 };

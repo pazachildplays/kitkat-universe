@@ -1,9 +1,6 @@
 node_modules/
-.DS_Store
-*.log
 .env
-.env.local
+.DS_Store
+.netlify/
 dist/
-build/
-.vercel
-.env*.local
+coverage/
