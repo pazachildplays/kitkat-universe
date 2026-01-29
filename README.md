@@ -1,4 +1,6 @@
-# KitKat Universe
+git fetch origin
+
+git pull origin main9# KitKat Universe
 
 Welcome to the KitKat Universe! This project is a viewer and admin panel for KitKat's content, featuring games like Uno and Chess.
 
