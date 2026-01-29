@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node server/index.js",
     "dev": "node server/index.js",
-    "build": "npm install && node scripts/build.js"
+    "build": "echo 'No build step required'"
   },
   "dependencies": {
     "@vercel/kv": "^1.0.0",
